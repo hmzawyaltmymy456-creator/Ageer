@@ -334,20 +334,25 @@
             const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
             const permits = getPermits();
             const permit = permits.find(p => p.permitId === permitId);
-            if (permit) {
+            
+            if (!permit) {
+                return `${baseUrl}index.html?id=${encodeURIComponent(permitId)}&i=1`;
+            }
+            
+            // Always encode the permit data in the URL
+            try {
+                const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(permit))));
+                return `${baseUrl}index.html?id=${encodeURIComponent(permitId)}&d=${encoded}`;
+            } catch(e) {
+                console.error('Encoding error, trying simple encoding:', e);
                 try {
-                    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(permit))));
+                    const encoded = btoa(JSON.stringify(permit));
                     return `${baseUrl}index.html?id=${encodeURIComponent(permitId)}&d=${encoded}`;
-                } catch(e) {
-                    console.error('Encoding error:', e);
+                } catch(e2) {
+                    console.error('Simple encoding also failed:', e2);
+                    return `${baseUrl}index.html?id=${encodeURIComponent(permitId)}&i=1`;
                 }
             }
-            // Always try to encode - if permit exists, it should work
-            if (permit) {
-                const encoded = btoa(JSON.stringify(permit));
-                return `${baseUrl}index.html?id=${encodeURIComponent(permitId)}&d=${encoded}`;
-            }
-            return `${baseUrl}index.html?id=${encodeURIComponent(permitId)}&i=1`;
         }
 
         function savePermit(e) {

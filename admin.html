@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم تصاريح أجير</title>
+    <link rel="stylesheet" href="admin-style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <script src="js/qrcode.min.js"></script>
+</head>
+<body>
+
+    <!-- Header / Navbar -->
+    <header class="admin-navbar">
+        <div class="brand">
+            📜 لوحة تحكم <span>تصاريح أجير</span>
+        </div>
+        <div class="nav-actions">
+            <a href="index.html" target="_blank" class="btn-nav">🌐 الذهاب لصفحة التصاريح</a>
+        </div>
+    </header>
+
+    <div class="admin-container">
+
+        <!-- Page Header & Stats -->
+        <div class="page-title-box">
+            <h1>إدارة تصاريح الموارد البشرية</h1>
+            <div class="live-time-badge" id="liveTimeBadge">
+                🕒 <span>جاري التحميل...</span>
+            </div>
+        </div>
+
+        <div class="stats-container">
+            <div class="stat-card">
+                <div class="info">
+                    <p>إجمالي التصاريح</p>
+                    <h3 id="statTotal">0</h3>
+                </div>
+                <div class="icon icon-blue">📋</div>
+            </div>
+            <div class="stat-card">
+                <div class="info">
+                    <p>التصاريح المفعلة (شغالة)</p>
+                    <h3 id="statActive">0</h3>
+                </div>
+                <div class="icon icon-green">✅</div>
+            </div>
+            <div class="stat-card">
+                <div class="info">
+                    <p>التصاريح الموقوفة</p>
+                    <h3 id="statInactive">0</h3>
+                </div>
+                <div class="icon icon-red">⛔</div>
+            </div>
+        </div>
+
+        <!-- Form Section -->
+        <div class="card-section">
+            <div class="card-section-header">
+                <h2 id="formTitle">✏️ إضافة تصريح جديد</h2>
+                <div style="display: flex; gap: 8px;">
+                    <button type="button" class="btn btn-secondary btn-sm" onclick="fillSampleData()">⚡ تعبئة نموذج تجريبي</button>
+                    <button type="button" class="btn btn-secondary btn-sm" id="btnCancelEdit" style="display: none;" onclick="resetForm()">إلغاء التعديل</button>
+                </div>
+            </div>
+
+            <form id="permitForm" onsubmit="savePermit(event)">
+                <input type="hidden" id="editIndex" value="-1">
+
+                <div class="form-fieldset">
+                    <legend>معلومات التصريح والموظف</legend>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="permitId">رقم التصريح (للرابط) <span class="required">*</span></label>
+                            <input type="text" id="permitId" class="form-control" placeholder="مثال: 1072" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="workerName">إسم الموظف <span class="required">*</span></label>
+                            <input type="text" id="workerName" class="form-control" placeholder="مثال: AHMAD FAISAL AFZAL KHAN" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="nationalId">رقم الهوية / الإقامة (لتسمية الـ QR) <span class="required">*</span></label>
+                            <input type="text" id="nationalId" class="form-control" placeholder="مثال: 2403778612" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="permitStatusText">حالة التصريح النصية</label>
+                            <input type="text" id="permitStatusText" class="form-control" placeholder="مثال: نشط">
+                        </div>
+                        <div class="form-group">
+                            <label for="startDate">تاريخ بداية التصريح</label>
+                            <input type="text" id="startDate" class="form-control" placeholder="مثال: 2026-07-26">
+                        </div>
+                        <div class="form-group">
+                            <label for="endDate">تاريخ إنتهاء التصريح</label>
+                            <input type="text" id="endDate" class="form-control" placeholder="مثال: 2027-07-26">
+                        </div>
+                        <div class="form-group">
+                            <label for="permitStatus">تفعيل/توقيف الرابط</label>
+                            <select id="permitStatus" class="form-control">
+                                <option value="active">🟢 شغال (مفعل)</option>
+                                <option value="inactive">🔴 موقوف (غير مفعل)</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-fieldset">
+                    <legend>المنشأة المستفيدة</legend>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="beneficiaryName">اسم المنشأة <span class="required">*</span></label>
+                            <input type="text" id="beneficiaryName" class="form-control" placeholder="مثال: مؤسسة اذا العربية للتشغيل والصيانة" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="beneficiaryNumber">رقم المنشأة <span class="required">*</span></label>
+                            <input type="text" id="beneficiaryNumber" class="form-control" placeholder="مثال: 9-1977725" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-fieldset">
+                    <legend>شركة الإستقدام</legend>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="providerName">اسم المنشأة <span class="required">*</span></label>
+                            <input type="text" id="providerName" class="form-control" placeholder="مثال: ندى ناصر البلوي" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="providerNumber">رقم المنشأة <span class="required">*</span></label>
+                            <input type="text" id="providerNumber" class="form-control" placeholder="مثال: 6-4037786" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-actions">
+                    <button type="button" class="btn btn-secondary" onclick="resetForm()">مسح الحقول</button>
+                    <button type="submit" class="btn btn-primary" id="btnSubmit">💾 حفظ التصريح</button>
+                </div>
+            </form>
+        </div>
+
+        <!-- Permits Table Section -->
+        <div class="card-section">
+            <div class="card-section-header">
+                <h2>📑 قائمة التصاريح المسجلة</h2>
+                <div style="display: flex; gap: 12px; flex-wrap: wrap; align-items: center;">
+                    <div class="filter-tabs">
+                        <button class="filter-tab active" id="tabAll" onclick="setFilter('all')">الكل</button>
+                        <button class="filter-tab" id="tabActive" onclick="setFilter('active')">المفعلة 🟢</button>
+                        <button class="filter-tab" id="tabInactive" onclick="setFilter('inactive')">الموقوفة 🔴</button>
+                    </div>
+
+                    <input type="text" id="searchInput" class="form-control" placeholder="🔍 بحث عن تصريح..." style="max-width: 220px;" oninput="renderTable()">
+                    <button class="btn btn-secondary btn-sm" onclick="exportToCSV()" title="تصدير للبيانات">📊 تصدير Excel</button>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>رقم التصريح</th>
+                            <th>إسم الموظف</th>
+                            <th>رقم الهوية</th>
+                            <th>المنشأة المستفيدة</th>
+                            <th>شركة الإستقدام</th>
+                            <th>الحالة</th>
+                            <th>الإجراءات والعمليات</th>
+                        </tr>
+                    </thead>
+                    <tbody id="permitsTableBody">
+                        <!-- Dynamic Permit Rows -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- QR Code Modal -->
+    <div class="modal-overlay" id="qrModal">
+        <div class="modal-card">
+            <div class="modal-header">
+                <h3>📱 رمز الـ QR للتصريح</h3>
+                <button class="modal-close" onclick="closeQrModal()">&times;</button>
+            </div>
+
+            <div class="qr-box">
+                <div id="qrcodeCanvasContainer"></div>
+            </div>
+
+            <div class="qr-info">
+                الموظف: <strong id="modalWorkerName">--</strong><br>
+                رقم الهوية: <strong id="modalNationalId">--</strong><br>
+                رقم التصريح: <strong id="modalPermitId">--</strong>
+            </div>
+
+            <button type="button" class="btn btn-primary" style="width: 100%; justify-content: center;" onclick="downloadQrCode()">
+                📥 تحميل صورة الـ QR (باسم رقم الهوية)
+            </button>
+        </div>
+    </div>
+
+    <!-- Toast Alert -->
+    <div class="toast-alert" id="toastAlert">
+        <span id="toastAlertIcon">✅</span>
+        <span id="toastAlertMessage">تمت العملية بنجاح</span>
+    </div>
+
+    <script>
+        const STORAGE_KEY = 'ajeer_permits';
+        let activeQrNationalId = '';
+        let activeQrPermitId = '';
+        let currentFilterStatus = 'all';
+
+        function cleanDate(dateStr) {
+            if (!dateStr) return '';
+            return String(dateStr).replace(/[هـم]/g, '').trim();
+        }
+
+        const defaultSampleData = [
+            {
+                permitId: '1072',
+                workerName: 'AHMAD FAISAL AFZAL KHAN',
+                nationalId: '2403778612',
+                permitStatusText: 'نشط',
+                startDate: '2026-07-26',
+                endDate: '2027-07-26',
+                beneficiaryName: 'مؤسسة اذا العربية للتشغيل والصيانة',
+                beneficiaryNumber: '9-1977725',
+                providerName: 'ندى ناصر البلوي',
+                providerNumber: '6-4037786',
+                status: 'active'
+            }
+        ];
+
+        function getPermits() {
+            const data = localStorage.getItem(STORAGE_KEY);
+            if (!data) {
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(defaultSampleData));
+                return defaultSampleData;
+            }
+            try {
+                return JSON.parse(data);
+            } catch (e) {
+                return defaultSampleData;
+            }
+        }
+
+        function savePermitsToStorage(permits) {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(permits));
+            renderTable();
+            updateStats();
+        }
+
+        function updateStats() {
+            const permits = getPermits();
+            document.getElementById('statTotal').innerText = permits.length;
+            document.getElementById('statActive').innerText = permits.filter(p => p.status === 'active').length;
+            document.getElementById('statInactive').innerText = permits.filter(p => p.status === 'inactive').length;
+        }
+
+        function setFilter(filter) {
+            currentFilterStatus = filter;
+            document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
+            if (filter === 'all') document.getElementById('tabAll').classList.add('active');
+            if (filter === 'active') document.getElementById('tabActive').classList.add('active');
+            if (filter === 'inactive') document.getElementById('tabInactive').classList.add('active');
+            renderTable();
+        }
+
+        function renderTable() {
+            const permits = getPermits();
+            const search = document.getElementById('searchInput').value.trim().toLowerCase();
+            const tbody = document.getElementById('permitsTableBody');
+            tbody.innerHTML = '';
+
+            const filtered = permits.filter(p => {
+                const matchesSearch = 
+                    p.permitId.toLowerCase().includes(search) ||
+                    p.workerName.toLowerCase().includes(search) ||
+                    p.nationalId.toLowerCase().includes(search) ||
+                    p.beneficiaryName.toLowerCase().includes(search) ||
+                    p.providerName.toLowerCase().includes(search);
+
+                const matchesFilter = currentFilterStatus === 'all' || p.status === currentFilterStatus;
+
+                return matchesSearch && matchesFilter;
+            });
+
+            if (filtered.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding: 40px; color: #94a3b8; font-weight:700;">لا توجد تصاريح مطابقة للبحث</td></tr>`;
+                return;
+            }
+
+            filtered.forEach((p) => {
+                const realIndex = permits.findIndex(item => item.permitId === p.permitId);
+                const tr = document.createElement('tr');
+
+                const isBlocked = p.status === 'inactive';
+                const statusBadge = isBlocked 
+                    ? `<span class="badge badge-danger">🔴 موقوف</span>` 
+                    : `<span class="badge badge-success">🟢 مفعل</span>`;
+
+                const toggleBtn = isBlocked 
+                    ? `<button class="btn btn-toggle-on btn-sm" onclick="toggleStatus(${realIndex})">▶️ تشغيل</button>`
+                    : `<button class="btn btn-toggle-off btn-sm" onclick="toggleStatus(${realIndex})">⏸️ توقيف</button>`;
+
+                const pageUrl = getPermitFullUrl(p.permitId);
+
+                tr.innerHTML = `
+                    <td><strong>${p.permitId}</strong></td>
+                    <td>${p.workerName}</td>
+                    <td><code>${p.nationalId}</code></td>
+                    <td>${p.beneficiaryName}<br><small style="color:#64748b;">رقم: ${p.beneficiaryNumber}</small></td>
+                    <td>${p.providerName}<br><small style="color:#64748b;">رقم: ${p.providerNumber}</small></td>
+                    <td>${statusBadge}</td>
+                    <td>
+                        <div class="action-buttons">
+                            ${toggleBtn}
+                            <a href="${pageUrl}" target="_blank" class="btn btn-info btn-sm">👁️ مشاهدة</a>
+                            <button type="button" class="btn btn-purple btn-sm" onclick="copyPermitLink('${p.permitId}')">🔗 نسخ الرابط</button>
+                            <button type="button" class="btn btn-amber btn-sm" onclick="showQrModal('${p.permitId}', '${p.workerName}', '${p.nationalId}')">📱 QR Code</button>
+                            <button type="button" class="btn btn-secondary btn-sm" onclick="editPermit(${realIndex})">✏️ تعديل</button>
+                            <button type="button" class="btn btn-danger btn-sm" onclick="deletePermit(${realIndex})">🗑️ حذف</button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function getPermitFullUrl(permitId) {
+            const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
+            const permits = getPermits();
+            const permit = permits.find(p => p.permitId === permitId);
+            if (permit) {
+                try {
+                    const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(permit))));
+                    return `${baseUrl}index.html?id=${encodeURIComponent(permitId)}&d=${encoded}`;
+                } catch(e) {
+                    // fallback to id only
+                }
+            }
+            return `${baseUrl}index.html?id=${encodeURIComponent(permitId)}&i=1`;
+        }
+
+        function savePermit(e) {
+            e.preventDefault();
+            const editIdx = parseInt(document.getElementById('editIndex').value);
+            const permits = getPermits();
+
+            const permitObj = {
+                permitId: document.getElementById('permitId').value.trim(),
+                workerName: document.getElementById('workerName').value.trim(),
+                nationalId: document.getElementById('nationalId').value.trim(),
+                permitStatusText: document.getElementById('permitStatusText').value.trim() || 'نشط',
+                startDate: cleanDate(document.getElementById('startDate').value),
+                endDate: cleanDate(document.getElementById('endDate').value),
+                beneficiaryName: document.getElementById('beneficiaryName').value.trim(),
+                beneficiaryNumber: document.getElementById('beneficiaryNumber').value.trim(),
+                providerName: document.getElementById('providerName').value.trim(),
+                providerNumber: document.getElementById('providerNumber').value.trim(),
+                status: document.getElementById('permitStatus').value
+            };
+
+            if (editIdx >= 0) {
+                permits[editIdx] = permitObj;
+                showToast('✅ تم تعديل بيانات التصريح بنجاح');
+            } else {
+                if (permits.some(p => p.permitId === permitObj.permitId)) {
+                    alert('رقم التصريح هذا موجود مسبقاً، يرجى اختيار رقم تصريح آخر.');
+                    return;
+                }
+                permits.push(permitObj);
+                showToast('✅ تم إضافة التصريح الجديد بنجاح');
+            }
+
+            savePermitsToStorage(permits);
+            resetForm();
+        }
+
+        function toggleStatus(index) {
+            const permits = getPermits();
+            if (permits[index]) {
+                const newStatus = permits[index].status === 'active' ? 'inactive' : 'active';
+                permits[index].status = newStatus;
+                savePermitsToStorage(permits);
+                const msg = newStatus === 'active' ? '🟢 تم تشغيل التصريح بنجاح' : '🔴 تم توقيف التصريح بنجاح';
+                showToast(msg);
+            }
+        }
+
+        function editPermit(index) {
+            const permits = getPermits();
+            const p = permits[index];
+            if (!p) return;
+
+            document.getElementById('editIndex').value = index;
+            document.getElementById('permitId').value = p.permitId;
+            document.getElementById('workerName').value = p.workerName;
+            document.getElementById('nationalId').value = p.nationalId;
+            document.getElementById('permitStatusText').value = p.permitStatusText || 'نشط';
+            document.getElementById('startDate').value = cleanDate(p.startDate) || '';
+            document.getElementById('endDate').value = cleanDate(p.endDate) || '';
+            document.getElementById('beneficiaryName').value = p.beneficiaryName;
+            document.getElementById('beneficiaryNumber').value = p.beneficiaryNumber;
+            document.getElementById('providerName').value = p.providerName;
+            document.getElementById('providerNumber').value = p.providerNumber;
+            document.getElementById('permitStatus').value = p.status || 'active';
+
+            document.getElementById('formTitle').innerText = `✏️ تعديل التصريح رقم (${p.permitId})`;
+            document.getElementById('btnSubmit').innerText = '💾 حفظ التعديلات';
+            document.getElementById('btnCancelEdit').style.display = 'inline-block';
+
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function fillSampleData() {
+            const randomId = Math.floor(1000 + Math.random() * 9000).toString();
+            const sampleNID = '24' + Math.floor(10000000 + Math.random() * 90000000).toString();
+            
+            document.getElementById('permitId').value = randomId;
+            document.getElementById('workerName').value = 'AHMAD FAISAL AFZAL KHAN';
+            document.getElementById('nationalId').value = sampleNID;
+            document.getElementById('permitStatusText').value = 'نشط';
+            document.getElementById('startDate').value = '2026-07-26';
+            document.getElementById('endDate').value = '2027-07-26';
+            document.getElementById('beneficiaryName').value = 'مؤسسة اذا العربية للتشغيل والصيانة';
+            document.getElementById('beneficiaryNumber').value = '9-1977725';
+            document.getElementById('providerName').value = 'ندى ناصر البلوي';
+            document.getElementById('providerNumber').value = '6-4037786';
+            document.getElementById('permitStatus').value = 'active';
+
+            showToast('⚡ تم ملء النموذج ببيانات تجريبية');
+        }
+
+        function resetForm() {
+            document.getElementById('editIndex').value = "-1";
+            document.getElementById('permitForm').reset();
+            document.getElementById('formTitle').innerText = '✏️ إضافة تصريح جديد';
+            document.getElementById('btnSubmit').innerText = '💾 حفظ التصريح';
+            document.getElementById('btnCancelEdit').style.display = 'none';
+        }
+
+        function deletePermit(index) {
+            const permits = getPermits();
+            if (confirm(`هل أنت تأكد من رغبتك في حذف التصريح رقم (${permits[index].permitId})؟`)) {
+                permits.splice(index, 1);
+                savePermitsToStorage(permits);
+                showToast('🗑️ تم حذف التصريح بنجاح');
+            }
+        }
+
+        function copyPermitLink(permitId) {
+            const url = getPermitFullUrl(permitId);
+            navigator.clipboard.writeText(url).then(() => {
+                showToast('📋 تم نسخ رابط التصريح بنجاح!');
+            }).catch(() => {
+                prompt('انسخ الرابط التالي:', url);
+            });
+        }
+
+        function showQrModal(permitId, workerName, nationalId) {
+            try {
+                activeQrNationalId = nationalId;
+                activeQrPermitId = permitId;
+
+                document.getElementById('modalWorkerName').innerText = workerName || permitId;
+                document.getElementById('modalNationalId').innerText = nationalId || permitId;
+                document.getElementById('modalPermitId').innerText = permitId;
+
+                const qrContainer = document.getElementById('qrcodeCanvasContainer');
+                qrContainer.innerHTML = '';
+
+                const permitUrl = getPermitFullUrl(permitId);
+
+                if (typeof QRCode !== 'undefined') {
+                    new QRCode(qrContainer, {
+                        text: permitUrl,
+                        width: 200,
+                        height: 200,
+                        colorDark: "#1d357e",
+                        colorLight: "#ffffff"
+                    });
+                }
+            } catch (err) {
+                console.error('Error generating QR code:', err);
+            } finally {
+                document.getElementById('qrModal').classList.add('active');
+            }
+        }
+
+        function closeQrModal() {
+            document.getElementById('qrModal').classList.remove('active');
+        }
+
+        function downloadQrCode() {
+            const canvas = document.querySelector('#qrcodeCanvasContainer canvas');
+            if (!canvas) {
+                alert('لم يتم العثور على صورة الـ QR!');
+                return;
+            }
+
+            const imageURI = canvas.toDataURL("image/png");
+            const link = document.createElement('a');
+            const filename = `${activeQrNationalId || 'permit_qr'}.png`;
+            link.download = filename;
+            link.href = imageURI;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+
+            showToast(`📥 تم تنزيل QR باسم (${filename})`);
+        }
+
+        function exportToCSV() {
+            const permits = getPermits();
+            if (permits.length === 0) {
+                alert('لا توجد بيانات للتصدير!');
+                return;
+            }
+
+            let csvContent = "\uFEFFرقم التصريح,إسم الموظف,رقم الهوية,حالة التصريح النصية,تاريخ البداية,تاريخ النهاية,المنشأة المستفيدة,رقم المنشأة,شركة الاستقدام,رقم الشركة,الحالة\n";
+            permits.forEach(p => {
+                csvContent += `"${p.permitId}","${p.workerName}","${p.nationalId}","${p.permitStatusText || 'نشط'}","${cleanDate(p.startDate)}","${cleanDate(p.endDate)}","${p.beneficiaryName}","${p.beneficiaryNumber}","${p.providerName}","${p.providerNumber}","${p.status === 'active' ? 'مفعل' : 'موقوف'}"\n`;
+            });
+
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `ajeer_permits_${new Date().toISOString().slice(0,10)}.csv`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('📊 تم تصدير البيانات إلى ملف CSV');
+        }
+
+        function showToast(message) {
+            const toast = document.getElementById('toastAlert');
+            document.getElementById('toastAlertMessage').innerText = message;
+            toast.classList.add('show');
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('ar-SA', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            const dateStr = now.toLocaleDateString('ar-SA', { year: 'numeric', month: 'short', day: 'numeric' });
+            document.getElementById('liveTimeBadge').innerHTML = `🕒 <span>${dateStr} - ${timeStr}</span>`;
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            renderTable();
+            updateStats();
+            updateClock();
+            setInterval(updateClock, 1000);
+        });
+    </script>
+</body>
+</html>

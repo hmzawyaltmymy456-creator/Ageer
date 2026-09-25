@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>تصريح أجير</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<!-- Floating Help Button -->
+<div class="floating-help">؟</div>
+
+<!-- Toast Notification -->
+<div id="copy-toast">
+    <div class="toast-content">
+        <span class="toast-close-x" onclick="closeToast()">×</span>
+        <span class="toast-text">تم نسخ الرابط</span>
+        <div class="toast-check-icon">✓</div>
+    </div>
+</div>
+
+<!-- Header -->
+<header class="header">
+    <div class="menu-icon">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+    <img src="img/ajeer.PNG" alt="Ajeer" class="logo-header-left">
+</header>
+
+<!-- Main Container -->
+<main class="container" id="permitContent">
+    <!-- Dynamic Content Injected Here -->
+</main>
+
+<!-- Footer -->
+<footer class="footer">
+    <img src="img/ajeer.PNG" alt="Ajeer Logo" class="footer-logo-main">
+
+    <div class="footer-links-container">
+        <a href="#" class="footer-link">سياسات الخصوصية</a>
+        <a href="#" class="footer-link">الشروط والأحكام</a>
+    </div>
+
+    <p class="footer-copyright">
+        © ١٤٤٧ / أجير حلول الموارد البشرية
+    </p>
+
+    <div class="footer-lang">🌐 English</div>
+
+    <div class="footer-bottom-logos">
+        <img src="img/takaml.PNG" alt="Takamol" class="footer-logo-takaml">
+        <img src="img/hrsd.PNG" alt="HRSD" class="footer-logo-hrsd">
+    </div>
+</footer>
+
+<script>
+    const STORAGE_KEY = 'ajeer_permits';
+
+    // Helper to strip 'هـ' or 'م' from dates
+    function cleanDate(dateStr) {
+        if (!dateStr) return '';
+        return String(dateStr).replace(/[هـم]/g, '').trim();
+    }
+
+    // Default sample permit data matching screenshots
+    const defaultPermit = {
+        permitId: '1072',
+        workerName: 'AHMAD FAISAL AFZAL KHAN',
+        nationalId: '2403778612',
+        permitStatusText: 'نشط',
+        startDate: '2026-07-26',
+        endDate: '2027-07-26',
+        beneficiaryName: 'مؤسسة اذا العربية للتشغيل والصيانة',
+        beneficiaryNumber: '9-1977725',
+        providerName: 'ندى ناصر البلوي',
+        providerNumber: '6-4037786',
+        status: 'active'
+    };
+
+    function loadPermit() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const permitId = urlParams.get('id');
+        const encodedData = urlParams.get('d');
+        const contentContainer = document.getElementById('permitContent');
+
+        let targetPermit = null;
+
+        // Priority 1: Read permit data embedded in URL (works from any device/mobile)
+        if (encodedData) {
+            try {
+                targetPermit = JSON.parse(decodeURIComponent(escape(atob(encodedData))));
+            } catch(e) {
+                targetPermit = null;
+            }
+        }
+
+        // Priority 2: Fallback to localStorage (for old links without embedded data)
+        if (!targetPermit) {
+            let permits = [];
+            const stored = localStorage.getItem(STORAGE_KEY);
+            if (stored) {
+                try {
+                    permits = JSON.parse(stored);
+                } catch (e) {
+                    permits = [defaultPermit];
+                }
+            } else {
+                permits = [defaultPermit];
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(permits));
+            }
+
+            if (permitId) {
+                targetPermit = permits.find(p => p.permitId === permitId);
+            } else {
+                targetPermit = permits.find(p => p.permitId === '1072') || permits[0];
+            }
+        }
+
+        // Render Record Not Found if missing or status is inactive
+        if (!targetPermit || targetPermit.status !== 'active') {
+            contentContainer.innerHTML = `
+                <h1 class="main-title">تصريح أجير لحلول الموارد <br>البشرية</h1>
+                <div class="card-not-found">Record not found.</div>
+            `;
+            return;
+        }
+
+        // Status text logic (default: نشط)
+        const statusDisplay = targetPermit.permitStatusText || 'نشط';
+
+        // Clean dates to remove 'هـ' or 'م'
+        const displayStartDate = cleanDate(targetPermit.startDate) || '2026-07-26';
+        const displayEndDate = cleanDate(targetPermit.endDate) || '2027-07-26';
+
+        // Render Active Permit Cards in exact requested order with strict right-alignment
+        contentContainer.innerHTML = `
+            <h1 class="main-title">تصريح أجير لحلول الموارد <br>البشرية</h1>
+
+            <!-- 1. معلومات التصريح Card -->
+            <div class="permit-card">
+                <div class="card-title">معلومات التصريح</div>
+                <div class="info-group">
+                    <span class="info-label">اسم الموظف:</span>
+                    <span class="info-value">${escapeHtml(targetPermit.workerName)}</span>
+                </div>
+                <div class="info-group" style="margin-top: 16px;">
+                    <span class="info-label">حالة التصريح:</span>
+                    <div>
+                        <span class="status-badge-inline">${escapeHtml(statusDisplay)}</span>
+                    </div>
+                </div>
+                <div class="info-group" style="margin-top: 16px;">
+                    <span class="info-label">تاريخ بداية التصريح:</span>
+                    <span class="info-value">${escapeHtml(displayStartDate)}</span>
+                </div>
+                <div class="info-group" style="margin-top: 16px;">
+                    <span class="info-label">تاريخ إنتهاء التصريح:</span>
+                    <span class="info-value">${escapeHtml(displayEndDate)}</span>
+                </div>
+            </div>
+
+            <!-- 2. المنشأة المستفيدة Card -->
+            <div class="permit-card">
+                <div class="card-title">المنشأة المستفيدة</div>
+                <div class="info-group">
+                    <span class="info-label">اسم المنشأة:</span>
+                    <span class="info-value">${escapeHtml(targetPermit.beneficiaryName)}</span>
+                </div>
+                <div class="info-group" style="margin-top: 16px;">
+                    <span class="info-label">رقم المنشأة:</span>
+                    <span class="info-value">${escapeHtml(targetPermit.beneficiaryNumber)}</span>
+                </div>
+            </div>
+
+            <!-- 3. شركة الإستقدام Card -->
+            <div class="permit-card">
+                <div class="card-title">شركة الإستقدام</div>
+                <div class="info-group">
+                    <span class="info-label">اسم المنشأة:</span>
+                    <span class="info-value">${escapeHtml(targetPermit.providerName)}</span>
+                </div>
+                <div class="info-group" style="margin-top: 16px;">
+                    <span class="info-label">رقم المنشأة:</span>
+                    <span class="info-value">${escapeHtml(targetPermit.providerNumber)}</span>
+                </div>
+            </div>
+
+            <!-- Single Copy Link Button -->
+            <button class="btn-copy-link" onclick="copyLink()">
+                نسخ رابط الصفحة 🔗
+            </button>
+        `;
+    }
+
+    function escapeHtml(str) {
+        if (!str) return '';
+        return String(str)
+            .replace(/&/g, "&amp;")
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#039;");
+    }
+
+    function copyLink() {
+        navigator.clipboard.writeText(window.location.href).then(() => {
+            const toast = document.getElementById('copy-toast');
+            toast.classList.add('show');
+            setTimeout(() => { toast.classList.remove('show'); }, 3000);
+        }).catch(() => {
+            prompt('انسخ الرابط التالي:', window.location.href);
+        });
+    }
+
+    function closeToast() {
+        document.getElementById('copy-toast').classList.remove('show');
+    }
+
+    window.addEventListener('DOMContentLoaded', loadPermit);
+</script>
+
+</body>
+</html>

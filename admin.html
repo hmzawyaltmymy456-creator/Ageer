@@ -333,20 +333,27 @@
         function getPermitFullUrl(permitId) {
             const baseUrl = window.location.href.substring(0, window.location.href.lastIndexOf('/') + 1);
             const permits = getPermits();
+            console.log('getPermitFullUrl - permitId:', permitId);
+            console.log('getPermitFullUrl - permits:', permits);
+            
             const permit = permits.find(p => p.permitId === permitId);
+            console.log('getPermitFullUrl - found permit:', permit);
             
             if (!permit) {
+                console.error('Permit not found for ID:', permitId);
                 return `${baseUrl}index.html?id=${encodeURIComponent(permitId)}&i=1`;
             }
             
             // Always encode the permit data in the URL
             try {
                 const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(permit))));
+                console.log('getPermitFullUrl - encoded successfully, URL length:', encoded.length);
                 return `${baseUrl}index.html?id=${encodeURIComponent(permitId)}&d=${encoded}`;
             } catch(e) {
                 console.error('Encoding error, trying simple encoding:', e);
                 try {
                     const encoded = btoa(JSON.stringify(permit));
+                    console.log('getPermitFullUrl - simple encoding successful');
                     return `${baseUrl}index.html?id=${encodeURIComponent(permitId)}&d=${encoded}`;
                 } catch(e2) {
                     console.error('Simple encoding also failed:', e2);

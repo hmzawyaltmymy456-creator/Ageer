@@ -339,8 +339,13 @@
                     const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(permit))));
                     return `${baseUrl}index.html?id=${encodeURIComponent(permitId)}&d=${encoded}`;
                 } catch(e) {
-                    // fallback to id only
+                    console.error('Encoding error:', e);
                 }
+            }
+            // Always try to encode - if permit exists, it should work
+            if (permit) {
+                const encoded = btoa(JSON.stringify(permit));
+                return `${baseUrl}index.html?id=${encodeURIComponent(permitId)}&d=${encoded}`;
             }
             return `${baseUrl}index.html?id=${encodeURIComponent(permitId)}&i=1`;
         }

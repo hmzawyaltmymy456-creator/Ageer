@@ -92,9 +92,16 @@
         // Priority 1: Read permit data embedded in URL (works from any device/mobile)
         if (encodedData) {
             try {
-                targetPermit = JSON.parse(decodeURIComponent(escape(atob(encodedData))));
+                const normalizedData = encodedData.replace(/ /g, '+');
+                targetPermit = JSON.parse(decodeURIComponent(escape(atob(normalizedData))));
             } catch(e) {
-                targetPermit = null;
+                // Try simpler decoding if complex decoding fails
+                try {
+                    targetPermit = JSON.parse(atob(encodedData.replace(/ /g, '+')));
+                } catch(e2) {
+                    console.error('Failed to decode permit data:', e2);
+                    targetPermit = null;
+                }
             }
         }
 
